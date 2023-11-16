@@ -3,7 +3,7 @@ from typing import List
 from tqdm import tqdm
 import fire
 import torch
-from transformers import LlamaTokenizer, LlamaForSequenceClassification
+from transformers import LlamaTokenizer, LlamaForSequenceClassification, BitsAndBytesConfig
 from peft import (
     LoraConfig,
     get_peft_model,
@@ -100,10 +100,13 @@ def fl_finetune(
     model = LlamaForSequenceClassification.from_pretrained(
         global_model,
         load_in_8bit=True,
-        quantization_config = bnb_config
+        quantization_config = bnb_config,
         #torch_dtype=torch.float16,
         device_map=device_map,
+        num_labels=3
+
     )
+    
 
     tokenizer = LlamaTokenizer.from_pretrained(global_model)
     tokenizer.pad_token_id = (
@@ -111,6 +114,7 @@ def fl_finetune(
     )
     tokenizer.padding_side = "left"
 
+    model.config.pad_token_id = model.config.eos_token_id
     def tokenize(prompt, add_eos_token=True):
         result = tokenizer(
             prompt["instruction"],
@@ -127,7 +131,7 @@ def fl_finetune(
             result["input_ids"].append(tokenizer.eos_token_id)
             result["attention_mask"].append(1)
 
-        result["labels"] = result["response"].copy()
+        result["labels"] = prompt["response"]
 
         return result
 
@@ -137,7 +141,7 @@ def fl_finetune(
         #     data_point["context"],
         #     data_point["response"],
         # )
-        tokenized_full_prompt = tokenize(data_point["instruction"])
+        tokenized_full_prompt = tokenize(data_point)
         # if not train_on_inputs:
         #     user_prompt = prompter.generate_prompt(
         #         data_point["instruction"], data_point["context"]
