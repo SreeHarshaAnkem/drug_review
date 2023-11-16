@@ -137,19 +137,19 @@ def fl_finetune(
         #     data_point["context"],
         #     data_point["response"],
         # )
-        tokenized_full_prompt = tokenize(data_point)
-        if not train_on_inputs:
-            user_prompt = prompter.generate_prompt(
-                data_point["instruction"], data_point["context"]
-            )
-            tokenized_user_prompt = tokenize(user_prompt, add_eos_token=False)
-            user_prompt_len = len(tokenized_user_prompt["input_ids"])
+        tokenized_full_prompt = tokenize(data_point["instruction"])
+        # if not train_on_inputs:
+        #     user_prompt = prompter.generate_prompt(
+        #         data_point["instruction"], data_point["context"]
+        #     )
+        #     tokenized_user_prompt = tokenize(data_point["instruction"], add_eos_token=False)
+        #     user_prompt_len = len(tokenized_user_prompt["input_ids"])
 
-            tokenized_full_prompt["labels"] = [
-                                                  -100
-                                              ] * user_prompt_len + tokenized_full_prompt["labels"][
-                                                                    user_prompt_len:
-                                                                    ]  # could be sped up, probably
+        #     tokenized_full_prompt["labels"] = [
+        #                                           -100
+        #                                       ] * user_prompt_len + tokenized_full_prompt["labels"][
+        #                                                             user_prompt_len:
+        #                                                             ]  # could be sped up, probably
         return tokenized_full_prompt
 
     model = prepare_model_for_int8_training(model)
